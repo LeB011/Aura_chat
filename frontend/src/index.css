@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+}
+
+code, .mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 99%;
+        --foreground: 240 6% 6%;
+        --card: 0 0% 100%;
+        --card-foreground: 240 6% 6%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 240 6% 6%;
+        --primary: 240 6% 6%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 220 14% 96%;
+        --secondary-foreground: 220 9% 12%;
+        --muted: 220 14% 96%;
+        --muted-foreground: 220 9% 43%;
+        --accent: 240 5% 96%;
+        --accent-foreground: 240 6% 10%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 220 13% 91%;
+        --input: 220 13% 91%;
+        --ring: 240 6% 10%;
+        --success: 158 64% 40%;
+        --warning: 38 92% 50%;
+        --chart-1: 220 70% 50%;
+        --chart-2: 160 60% 45%;
+        --chart-3: 30 80% 55%;
+        --chart-4: 280 50% 55%;
+        --chart-5: 340 60% 55%;
+        --radius: 0.5rem;
+    }
+    .dark {
+        --background: 240 10% 1%;
+        --foreground: 0 0% 93%;
+        --card: 240 8% 6%;
+        --card-foreground: 0 0% 98%;
+        --popover: 240 8% 7%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 240 6% 6%;
+        --secondary: 240 4% 11%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 240 4% 9%;
+        --muted-foreground: 240 5% 65%;
+        --accent: 240 4% 15%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 63% 45%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 4% 15%;
+        --input: 240 4% 15%;
+        --ring: 240 5% 84%;
+        --success: 158 60% 45%;
+        --warning: 35 85% 55%;
+        --chart-1: 220 70% 60%;
+        --chart-2: 160 60% 55%;
+        --chart-3: 30 80% 65%;
+        --chart-4: 280 55% 65%;
+        --chart-5: 340 65% 65%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+    h1, h2, h3, h4, h5 { letter-spacing: -0.02em; }
+}
+
+/* Custom scrollbar - subtle */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
+
+.gradient-mask {
+    background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.06), transparent);
+}
+
+.dot-pattern {
+    background-image: radial-gradient(hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px);
+    background-size: 16px 16px;
+}
