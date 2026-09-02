@@ -1,0 +1,120 @@
+{
+  "theme": "hybrid_fullstack",
+  "style_inspiration": ["Linear", "Notion", "OpenAI", "Fintech"],
+  "typography": {
+    "primary_font": "Geist Sans",
+    "secondary_font": "Inter",
+    "headings": {
+      "font_family": "Geist Sans, sans-serif",
+      "font_weight": "600",
+      "letter_spacing": "tracking-tight",
+      "color": "text-foreground"
+    },
+    "body": {
+      "font_family": "Inter, sans-serif",
+      "font_weight": "400",
+      "color": "text-muted-foreground",
+      "letter_spacing": "tracking-normal"
+    },
+    "mono": {
+      "font_family": "JetBrains Mono, monospace",
+      "usage": "Data points, IDs, Logs, Code blocks"
+    }
+  },
+  "colors": {
+    "light_mode": {
+      "background": "#FDFDFD",
+      "foreground": "#0A0A0B",
+      "muted": "#F3F4F6",
+      "muted_foreground": "#6B7280",
+      "border": "#E5E7EB",
+      "primary": "#000000",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#F9FAFB",
+      "secondary_foreground": "#111827",
+      "accent": "#F4F4F5",
+      "accent_foreground": "#18181B",
+      "destructive": "#EF4444",
+      "destructive_foreground": "#FEF2F2",
+      "success": "#10B981",
+      "warning": "#F59E0B"
+    },
+    "dark_mode": {
+      "background": "#010102",
+      "foreground": "#EDEDED",
+      "muted": "#161618",
+      "muted_foreground": "#A1A1AA",
+      "border": "#27272A",
+      "primary": "#FFFFFF",
+      "primary_foreground": "#000000",
+      "secondary": "#1C1C1F",
+      "secondary_foreground": "#FAFAFA",
+      "accent": "#27272A",
+      "accent_foreground": "#FFFFFF",
+      "destructive": "#7F1D1D",
+      "destructive_foreground": "#FEF2F2",
+      "success": "#059669",
+      "warning": "#D97706"
+    }
+  },
+  "visual_enhancers": {
+    "borders": "1px solid, ultra-subtle. Never use thick borders.",
+    "shadows": "Minimal to zero. Use surface color steps instead of shadows for elevation. For popovers/modals, use a very diffuse shadow like shadow-[0_8px_30px_rgb(0,0,0,0.04)] in light mode and shadow-[0_8px_30px_rgb(0,0,0,0.12)] in dark mode.",
+    "border_radius": "Rounded-md (6px) or rounded-lg (8px) for cards and inputs. Sharp and crisp.",
+    "background_blur": "backdrop-blur-md for sticky headers or floating elements.",
+    "glassmorphism": "Used only for floating command palettes or toast notifications."
+  },
+  "layout_and_grids": {
+    "sidebar": "Fixed width 260px on desktop, collapsable to hamburger on mobile. Very clean list with Lucide icons.",
+    "topbar": "Sticky, contains Test Mode/Sandbox banner, Language selector (FR/EN), Theme Toggle, and User Profile.",
+    "page_container": "Max-width container, p-6 to p-10 depending on screen size. High density, meaning less empty whitespace than consumer apps.",
+    "grids": "Bento style or dense grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 for KPI cards and Agent Cards."
+  },
+  "motion": {
+    "transitions": "Fast and snappy. 150ms ease-out for hovers.",
+    "page_transitions": "Subtle fade-in and slide-up (translate-y-2 to translate-y-0).",
+    "accordions": "Smooth height transitions.",
+    "hover_states": "Background color shifts for list items. Slight border color change for cards."
+  },
+  "components": {
+    "buttons": "Pill-shaped or slightly rounded. Primary buttons are solid inverted (black in light mode, white in dark mode). Secondary buttons are outlined or ghost.",
+    "cards": "Flat, 1px border. No hover elevation, only border color change on hover.",
+    "tables": "Edge-to-edge feeling within their container. Flush rows. Density: compact (py-2 or py-3).",
+    "forms": "Inputs have subtle borders, focus ring is a thin primary color ring (ring-1 ring-primary).",
+    "badges": "Used for statuses (Active, Draft, Sent, Qualified). Very subtle background tint.",
+    "kill_switch": "A distinct, prominent button in red/destructive color to stop all agent activities instantly.",
+    "test_mode_banner": "A slim, top-of-screen banner indicating 'Test Mode / Sandbox' with a warning color (orange/yellow tint)."
+  },
+  "key_pages_requirements": {
+    "Dashboard": "KPI grid at the top (Active Agents, Prospects Found, Meetings, etc.). Below: Grid of Agent Cards (Prospect AI is active, others 'Coming soon').",
+    "Prospect_AI_Dashboard": "Search Form with multiple sections (Target, Location, Sources, Advanced Filters accordion, AI analysis toggle, Service type). A Data Table for prospects with sorting, filtering, selection, bulk actions.",
+    "Prospect_Details": "A side-panel or separate page showing Prospect Profile, AI Analysis Score (0-100 gauge/progress bar), Opportunities detected, and AI Message Generator with tabs for Email/Phone/LinkedIn/WhatsApp.",
+    "Security_Center": "A clean list of toggle switches (Human Validation, Send Limits, Delays, Blacklist, Opt-out).",
+    "Analytics": "Recharts based graphs (Bar chart for prospects by day, Pie chart for sectors, etc.).",
+    "Activity_Log": "A timeline or detailed table showing Date, Time, Agent, Action, Result.",
+    "Integrations": "Grid of simple cards with logos/icons for OpenAI, Gmail, Google Sheets, SMTP, CRM, Make, Zapier.",
+    "Settings": "Forms for AI Provider, Model, Creativity (slider), Language, Budget limits."
+  },
+  "libraries": {
+    "icons": "lucide-react",
+    "charts": "recharts",
+    "components": "shadcn/ui",
+    "motion": "framer-motion",
+    "toast": "sonner"
+  },
+  "accessibility": {
+    "contrast": "Ensure APCA and WCAG AA compliance.",
+    "focus": "All interactive elements must have focus-visible rings.",
+    "keyboard": "Implement keyboard navigation for tables and forms."
+  },
+  "instructions_to_main_agent": [
+    "Build the UI in React using standard .js files for React components, but properly utilize Tailwind and shadcn concepts.",
+    "Maintain high density in the layout. Do not over-pad the dashboard cards. Use text-sm for most of the UI and text-xs for secondary metadata.",
+    "Use Lucide icons for all integrations (e.g., Mail for Gmail, Database for CRM, Bot for OpenAI) if exact brand logos are missing.",
+    "Implement a language toggle (FR/EN) in the top nav using a simple Select or DropdownMenu component.",
+    "Implement a Theme toggle for Light/Dark mode.",
+    "Always add a 'data-testid' to interactive elements for testing.",
+    "Use Sonner for any toast notifications (e.g., saving settings, copying messages).",
+    "DO NOT use raw transparent backgrounds on overlays. Always use solid background colors or backdrop-blur with a semi-transparent background."
+  ]
+}

@@ -1,0 +1,22 @@
+Aura Hub V2.1 completion patch
+
+Main changes:
+- Prospect AI now exposes real provider selection (Mock / Google Places) instead of fake source checkboxes.
+- Google Places provider state is driven by GOOGLE_PLACES_API_KEY on the backend; no key is exposed to frontend.
+- Test Mode can keep real read-only search and real AI draft generation while outbound delivery remains blocked/simulated.
+- Campaign offer fields are stored and used for sales-message personalization.
+- Sales message engine rewritten for shorter, more professional B2B outreach, with 3 strategies and low-friction CTA.
+- Prospect detail shows REAL / TEST / SIMULATED provenance, provider, retrieval date and source link.
+- Unknown provider no longer silently falls back to Mock.
+- Safe Super Admin test-data cleanup preview/execute added, including legacy automated @example.com test tenants, while protecting current superadmin org.
+- Integration cards no longer fake a connection; OpenAI/Google Places can be validated against backend environment state.
+- backend/.env.example and frontend/.env.example added with placeholders only.
+- Real email sending is deliberately NOT implemented; backend refuses to pretend a real send occurred when Test Mode is off.
+
+Required before real Google Places search:
+- Set GOOGLE_PLACES_API_KEY in backend environment variables.
+- Keep Test Mode ON for initial tests.
+
+Validation performed:
+- Python compileall passed for backend.
+- Full pytest suite could not run in this container because the repository requires pytest-xdist, which is not installed here.
