@@ -1,0 +1,153 @@
+"""Message generation + list routes."""
+from fastapi import APIRouter, Depends, HTTPException
+from models import Message, MessageGenerateRequest, Activity, now_iso
+from auth import get_current_user, require_agent_access
+from db import get_db
+from services.ai_service import generate_message
+from services.message_intelligence import generate_verified_draft
+from services import quotas
+
+router = APIRouter(prefix="/messages", tags=["messages"])
+
+
+@router.post("/generate")
+async def generate(payload: MessageGenerateRequest, user: dict = Depends(require_agent_access("prospect_ai"))):
+    db = get_db()
+    prospect = await db.prospects.find_one({"id": payload.prospect_id, "organization_id": user["organization_id"]}, {"_id": 0})
+    if not prospect:
+        raise HTTPException(404, "Prospect introuvable")
+    security = await db.security_settings.find_one({"organization_id": user["organization_id"]}, {"_id": 0})
+    if security and security.get("kill_switch_active"):
+        raise HTTPException(403, "Kill switch actif")
+    if prospect.get("do_not_contact") or prospect.get("opted_out"):
+        raise HTTPException(403, "Ce prospect est marqué Ne pas contacter / opt-out")
+
+    org = await db.organizations.find_one({"id": user["organization_id"]}, {"_id": 0})
+    test_mode = bool(org.get("test_mode", True)) if org else True
+
+    # Phase 0B: allow demo simulation drafts for mock/demo prospects in Test Mode.
+    # Real data still enforces verification (strict anti-hallucination).
+    is_simulation = (
+        test_mode and (prospect.get("source") in ("mock", "demo") or prospect.get("data_type") in ("demo", "test"))
+    )
+    if not is_simulation and security and security.get("require_verified_identity"):
+        min_v = int(security.get("minimum_verification_to_send", 50) or 50)
+        if int(prospect.get("verification_score") or 0) < min_v:
+            raise HTTPException(409, f"Prospect insuffisamment vérifié ({prospect.get('verification_score',0)}%). Revérifiez-le avant de préparer un contact.")
+
+    # Phase 0B: monthly AI operations quota
+    await quotas.check_and_record_ai(org or {"id": user["organization_id"]})
+
+    ai_settings = await db.ai_settings.find_one({"organization_id": user["organization_id"]}, {"_id": 0})
+    model = (ai_settings or {}).get("model", "gpt-5.4")
+
+    campaign = None
+    if prospect.get("campaign_id"):
+        campaign = await db.campaigns.find_one({"id": prospect["campaign_id"]}, {"_id": 0})
+    service_notes = (campaign or {}).get("criteria", {}).get("service_notes") if campaign else None
+    offer = (campaign or {}).get("offer") or (campaign or {}).get("criteria", {}).get("offer") or {}
+
+    # V8: safe commercial draft works without a paid LLM and only uses verified data.
+    # A paid LLM can be reintroduced later as an optional refinement layer, never as source of facts.
+    result = generate_verified_draft(prospect, payload.channel, payload.tone, payload.length,
+                                     payload.language, payload.objective, offer=offer,
+                                     strategy=payload.strategy,
+                                     simulation=is_simulation)
+
+    if is_simulation:
+        # Prefix body with a clear simulation marker so nothing gets sent by mistake.
+        prefix = "[SIMULATION — Test Mode / données mock, ne pas envoyer]\n\n"
+        if not (result.get("body") or "").startswith("[SIMULATION"):
+            result["body"] = prefix + (result.get("body") or "")
+
+    msg = Message(
+        organization_id=user["organization_id"],
+        prospect_id=payload.prospect_id,
+        channel=payload.channel,
+        tone=payload.tone,
+        length=payload.length,
+        language=payload.language,
+        objective=payload.objective,
+        subject=result.get("subject"),
+        body=result.get("body", ""),
+        cta=result.get("cta"),
+        status="simulation" if is_simulation else "draft",
+    )
+    await db.messages.insert_one(msg.model_dump())
+
+    # Update prospect
+    await db.prospects.update_one(
+        {"id": payload.prospect_id},
+        {"$set": {"status": "message_ready", "updated_at": now_iso()}},
+    )
+
+    # Log
+    act = Activity(organization_id=user["organization_id"],
+                    action=f"Message {payload.channel} généré",
+                    target=prospect.get("company_name"), status="success")
+    await db.activities.insert_one(act.model_dump())
+    return msg.model_dump()
+
+
+@router.get("")
+async def list_messages(prospect_id: str = None, user: dict = Depends(get_current_user)):
+    db = get_db()
+    q = {"organization_id": user["organization_id"]}
+    if prospect_id:
+        q["prospect_id"] = prospect_id
+    return await db.messages.find(q, {"_id": 0}).sort("created_at", -1).to_list(None)
+
+
+@router.patch("/{message_id}")
+async def update_message(message_id: str, payload: dict, user: dict = Depends(get_current_user)):
+    db = get_db()
+    allowed = {k: payload[k] for k in ("subject", "body", "cta", "status") if k in payload}
+    if not allowed:
+        raise HTTPException(400, "Aucun changement")
+    # Enforce kill switch when setting status to 'sent'
+    if allowed.get("status") == "sent":
+        security = await db.security_settings.find_one({"organization_id": user["organization_id"]}, {"_id": 0})
+        if security and security.get("kill_switch_active"):
+            raise HTTPException(403, "Kill switch actif : envoi bloqué")
+        allowed["sent_at"] = now_iso()
+    allowed["updated_at"] = now_iso()
+    await db.messages.update_one(
+        {"id": message_id, "organization_id": user["organization_id"]},
+        {"$set": allowed},
+    )
+    return await db.messages.find_one({"id": message_id, "organization_id": user["organization_id"]}, {"_id": 0})
+
+
+@router.post("/{message_id}/send")
+async def send_message(message_id: str, user: dict = Depends(require_agent_access("prospect_ai"))):
+    """In V1 this only simulates send when test_mode ON. Otherwise marks as sent (no real SMTP)."""
+    db = get_db()
+    msg = await db.messages.find_one({"id": message_id, "organization_id": user["organization_id"]}, {"_id": 0})
+    if not msg:
+        raise HTTPException(404, "Message introuvable")
+    security = await db.security_settings.find_one({"organization_id": user["organization_id"]}, {"_id": 0})
+    if security and security.get("kill_switch_active"):
+        raise HTTPException(403, "Kill switch actif : envoi bloqué")
+    prospect = await db.prospects.find_one({"id": msg.get("prospect_id"), "organization_id": user["organization_id"]}, {"_id": 0})
+    if not prospect:
+        raise HTTPException(404, "Prospect introuvable")
+    if prospect.get("do_not_contact") or prospect.get("opted_out"):
+        raise HTTPException(403, "Envoi bloqué : prospect DNC/opt-out")
+    if security and security.get("require_verified_identity"):
+        min_v=int(security.get("minimum_verification_to_send",50) or 50)
+        if int(prospect.get("verification_score") or 0) < min_v:
+            raise HTTPException(403, f"Envoi bloqué : vérification {prospect.get('verification_score',0)}% < {min_v}%")
+    org = await db.organizations.find_one({"id": user["organization_id"]}, {"_id": 0})
+    test_mode = bool(org.get("test_mode", True)) if org else True
+
+    # V2.1 has no real delivery transport. Never pretend an email was sent.
+    if not test_mode:
+        raise HTTPException(501, "Aucun transport email réel n'est configuré. Le message reste en brouillon.")
+    await db.messages.update_one(
+        {"id": message_id, "organization_id": user["organization_id"]},
+        {"$set": {"status": "test", "updated_at": now_iso()}},
+    )
+    act = Activity(organization_id=user["organization_id"], action="Envoi simulé (Test Mode)",
+                    target=msg.get("subject") or msg.get("body", "")[:50], status="success")
+    await db.activities.insert_one(act.model_dump())
+    return {"ok": True, "test_mode": True, "sent": False}
